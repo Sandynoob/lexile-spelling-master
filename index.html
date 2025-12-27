@@ -52,8 +52,10 @@
 </script>
 </head>
 <body>
+  <!-- 错误捕获层 -->
   <div id="error-display"></div>
 
+  <!-- 初始化加载层 -->
   <div id="loading-screen">
     <div class="spinner"></div>
     <p style="margin-top: 20px; color: #64748b; font-weight: bold;">Initializing Lexile Engine...</p>
@@ -62,32 +64,34 @@
   <div id="root"></div>
 
   <script>
-    // 捕获所有未处理的错误
+    // 全局错误捕获，用于调试
     window.onerror = function(msg, url, line, col, error) {
       var dev = document.getElementById('error-display');
       dev.style.display = 'block';
       var log = document.createElement('div');
-      log.innerHTML = '[ERROR] ' + msg + ' (Line: ' + line + ')';
+      log.style.marginBottom = '5px';
+      log.innerHTML = '<strong>[ERR]</strong> ' + msg + '<br><small>Line: ' + line + '</small>';
       dev.appendChild(log);
       return false;
     };
   </script>
 
-  <!-- 引用 esbuild 打包后的 JS -->
+  <!-- 只引用打包后的单一文件 -->
   <script src="index.js"></script>
 
   <script>
+    // 隐藏加载层
     window.addEventListener('load', function() {
-      var checkCount = 0;
       var check = setInterval(function() {
         var root = document.getElementById('root');
         if (root && root.children.length > 0) {
-          document.getElementById('loading-screen').style.opacity = '0';
-          setTimeout(function() { document.getElementById('loading-screen').style.display = 'none'; }, 300);
+          var loader = document.getElementById('loading-screen');
+          loader.style.opacity = '0';
+          setTimeout(function() { loader.style.display = 'none'; }, 300);
           clearInterval(check);
         }
-        if (checkCount++ > 100) clearInterval(check);
       }, 100);
+      setTimeout(function() { clearInterval(check); }, 5000);
     });
   </script>
 </body>
