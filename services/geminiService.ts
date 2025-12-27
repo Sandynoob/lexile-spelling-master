@@ -1,77 +1,56 @@
 
 /**
- * Localized Service for Offline Functionality
- * This service uses browser-native APIs instead of external Gemini calls.
+ * Localized Service for Offline & Online Fallback
  */
 
 /**
- * Uses browser-native SpeechSynthesis for offline American pronunciation.
- * Improved safety checks for Android WebView compatibility.
+ * 针对红米等国产手机的优化语音方案
+ * 逻辑：优先尝试浏览器 TTS，如果失败或环境受限，自动使用有道在线美音 API
  */
 export const playAmericanPronunciation = (word: string) => {
-  try {
-    // 1. 检查全局环境
-    if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return;
 
-    // 2. 获取合成引擎实例
-    const synth = window.speechSynthesis;
-    
-    // 3. 核心防御：如果 synth 不存在或 cancel 不是函数，直接退出
-    if (!synth || typeof synth.cancel !== 'function') {
-      console.warn("SpeechSynthesis.cancel is not available.");
-      return;
-    }
-
-    // 4. 安全执行取消
-    synth.cancel();
-
-    // 5. 检查构造函数是否存在
-    if (typeof window.SpeechSynthesisUtterance === 'undefined') {
-      console.warn("SpeechSynthesisUtterance is not defined.");
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(word);
-    
-    // 6. 安全获取声音列表
-    let voices: SpeechSynthesisVoice[] = [];
-    if (typeof synth.getVoices === 'function') {
-      try {
-        voices = synth.getVoices();
-      } catch (e) {
-        console.warn("Could not get voices.");
+  const wordClean = word.trim().toLowerCase();
+  
+  // 方案 A: 尝试原生 SpeechSynthesis (离线)
+  const synth = (window as any).speechSynthesis;
+  if (synth && typeof synth.speak === 'function') {
+    try {
+      synth.cancel();
+      const UtteranceClass = (window as any).SpeechSynthesisUtterance;
+      if (UtteranceClass) {
+        const utterance = new UtteranceClass(wordClean);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.8;
+        
+        // 探测是否有可用声音，如果没有则不强行调用 speak
+        const voices = synth.getVoices();
+        if (voices.length > 0) {
+          synth.speak(utterance);
+          // 如果 100ms 后还在朗读，说明原生引擎工作正常，直接返回
+          if (synth.speaking) return;
+        }
       }
+    } catch (e) {
+      console.warn("Native TTS failed, trying online fallback.");
     }
+  }
 
-    const usVoice = voices.find(v => v.lang.includes('en-US') && v.name.includes('Google')) || 
-                  voices.find(v => v.lang.includes('en-US')) ||
-                  (voices.length > 0 ? voices[0] : null);
-
-    if (usVoice) {
-      utterance.voice = usVoice;
-    }
-
-    utterance.lang = 'en-US';
-    utterance.rate = 0.8;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    // 7. 安全执行朗读
-    if (typeof synth.speak === 'function') {
-      synth.speak(utterance);
-    }
+  // 方案 B: 在线语音兜底 (针对国产手机优化的有道美音接口)
+  // type=2 表示美音，type=1 表示英音
+  try {
+    const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(wordClean)}&type=2`);
+    audio.play().catch(err => {
+      console.error("Online audio play failed:", err);
+    });
   } catch (error) {
-    // 捕获所有可能的异常，确保不阻塞主 UI 线程
-    console.error("SpeechSynthesis error caught:", error);
+    console.error("Final fallback audio failed:", error);
   }
 };
 
-/**
- * Static feedback logic based on user's score to ensure offline availability.
- */
 export const getAIFeedback = async (score: number): Promise<string> => {
   if (score >= 90) return "Absolutely incredible! Your spelling mastery is professional.";
-  if (score >= 80) return "Excellent performance! You have a strong grasp of these words.";
+  if (score >= 80) return "Excellent performance! You have a strong grasp.";
   if (score >= 60) return "Great job! You're showing solid progress.";
   if (score >= 40) return "You're on the right track! Keep practicing.";
   return "Good effort! Practice makes perfect—keep it up.";
