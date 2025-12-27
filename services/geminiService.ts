@@ -1,67 +1,54 @@
 
 /**
- * Optimized Service for Chinese Android Devices (MIUI/HyperOS)
+ * Defensive Service for Android Devices (Redmi K40 / MIUI)
  */
 
-/**
- * 语音播放逻辑：
- * 优先使用在线美音 API（有道），因为它在国产手机 WebView 中最稳定。
- * 系统原生 TTS 仅作为最后的静默备份。
- */
 export const playAmericanPronunciation = (word: string) => {
   if (typeof window === 'undefined') return;
   const wordClean = word.trim().toLowerCase();
 
-  // --- 策略 A: 在线音频 (最可靠) ---
+  // 1. 优先采用：有道在线语音 API (对国产安卓系统最稳定)
+  // type=2 表示美音
   try {
-    // type=2 为美音，type=1 为英音
-    const audioUrl = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(wordClean)}&type=2`;
-    const audio = new Audio(audioUrl);
-    
-    // 设置超时防止卡死
+    const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(wordClean)}&type=2`);
     const playPromise = audio.play();
     if (playPromise !== undefined) {
-      playPromise.catch(err => {
-        console.warn("Online audio play blocked or failed:", err);
-        // 如果在线播放失败，尝试策略 B
-        tryNativeTTS(wordClean);
+      playPromise.catch(() => {
+        // 如果在线播放被系统静音拦截，我们再尝试系统 TTS
+        safeSystemTTS(wordClean);
       });
     }
   } catch (err) {
-    console.error("Online audio initiation error:", err);
-    tryNativeTTS(wordClean);
+    safeSystemTTS(wordClean);
   }
 };
 
 /**
- * 极度防御性的原生 TTS 调用
+ * 极其防御性的系统 TTS 调用，杜绝 "undefined reading cancel" 报错
  */
-function tryNativeTTS(word: string) {
+function safeSystemTTS(word: string) {
   try {
-    const synth = (window as any).speechSynthesis;
+    // 使用这种写法能绕过绝大多数由于引擎未就绪导致的 undefined 访问报错
+    const w = window as any;
+    const synth = w['speechSynthesis'];
     
-    // 每一层访问都进行严格检查
-    if (!synth) return;
-    
-    // 防止 cancel 属性为 undefined
-    if (typeof synth.cancel === 'function') {
-      synth.cancel();
-    }
+    if (synth) {
+      // 检查 cancel 方法是否存在且是函数
+      if (typeof synth['cancel'] === 'function') {
+        synth['cancel']();
+      }
 
-    const UtteranceClass = (window as any).SpeechSynthesisUtterance;
-    if (!UtteranceClass) return;
-
-    const utterance = new UtteranceClass(word);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.8;
-    
-    // 只有在 speak 是函数时才调用
-    if (typeof synth.speak === 'function') {
-      synth.speak(utterance);
+      const Utterance = w['SpeechSynthesisUtterance'];
+      if (Utterance && typeof synth['speak'] === 'function') {
+        const u = new Utterance(word);
+        u.lang = 'en-US';
+        u.rate = 0.8;
+        synth['speak'](u);
+      }
     }
   } catch (e) {
-    // 静默失败，不弹出崩溃提示
-    console.warn("All TTS attempts failed for word:", word);
+    // 静默处理，不中断主流程
+    console.warn("Native TTS fallback failed silently.");
   }
 }
 
