@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,67 +9,39 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
-  <!-- 离线环境下 Tailwind 可能无法加载，但不会导致白屏。未来建议本地化 CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
-  
   <style>
+    :root { --primary: #4f46e5; --bg: #f8fafc; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: radial-gradient(circle at top left, #f8fafc, #e2e8f0);
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
+      background-color: #f8fafc;
+      font-family: sans-serif;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .font-kids {
-      font-family: 'Fredoka One', "Comic Sans MS", "Quicksand", "Avenir Next", "Segoe UI Symbol", cursive;
-    }
-    #root {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
+      -webkit-tap-highlight-color: transparent;
     }
     #loading-screen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8fafc;
-      z-index: 9999;
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #f8fafc; z-index: 9999;
     }
     .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #e2e8f0;
-      border-top: 4px solid #4f46e5;
+      width: 40px; height: 40px;
+      border: 4px solid #e2e8f0; border-top: 4px solid var(--primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    #error-console {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0,0,0,0.8);
-      color: #ff4444;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 10px;
-      z-index: 10000;
-      display: none;
-      word-break: break-all;
-      max-height: 30vh;
-      overflow-y: auto;
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    #error-display {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(220, 38, 38, 0.95); color: white;
+      padding: 15px; font-size: 12px; font-family: monospace;
+      z-index: 10001; display: none; max-height: 40vh; overflow: auto;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.2);
     }
   </style>
+
+  <!-- 仅用于装饰，不加载也不影响核心拼写功能 -->
+  <script src="https://cdn.tailwindcss.com"></script>
 <script type="importmap">
 {
   "imports": {
@@ -82,48 +53,38 @@
 </script>
 </head>
 <body>
-  <!-- 报错调试器 -->
-  <div id="error-console"></div>
+  <!-- 错误监控：如果屏幕还是白的，底部会出现红色文字报错 -->
+  <div id="error-display"></div>
 
-  <!-- 初始加载遮罩 -->
   <div id="loading-screen">
-    <div class="flex flex-col items-center gap-4">
-      <div class="spinner"></div>
-      <p style="font-family: sans-serif; color: #64748b; font-size: 14px;">Initializing App...</p>
-    </div>
+    <div class="spinner"></div>
+    <p style="margin-top: 20px; color: #64748b; font-weight: bold;">Starting App...</p>
   </div>
 
   <div id="root"></div>
 
-  <!-- 核心修复脚本：错误捕获 -->
   <script>
-    window.onerror = function(msg, url, lineNo, columnNo, error) {
-      var console = document.getElementById('error-console');
-      console.style.display = 'block';
-      console.innerHTML += 'ERROR: ' + msg + ' at ' + lineNo + ':' + columnNo + '<br>';
+    window.onerror = function(msg, url, line, col, error) {
+      var dev = document.getElementById('error-display');
+      dev.style.display = 'block';
+      dev.innerHTML += '<div>[ERROR] ' + msg + ' (' + line + ':' + col + ')</div>';
       return false;
     };
   </script>
 
-  <!-- 引用打包后的 JS。注意：不需要 type="module"，因为 esbuild 已经把它们打成了普通 IIFE 脚本 -->
+  <!-- 重要：这里引用本地打包后的 index.js -->
   <script src="index.js"></script>
-  
+
   <script>
     window.addEventListener('load', function() {
-      // 如果 React 成功运行，root 里面应该有内容
-      setTimeout(function() {
-        const root = document.getElementById('root');
-        const loader = document.getElementById('loading-screen');
-        if (root && root.innerHTML.length > 0) {
-          if (loader) {
-            loader.style.opacity = '0';
-            setTimeout(() => loader.style.display = 'none', 500);
-          }
-        } else {
-          // 如果 3 秒后还是没内容，说明 React 挂载失败了
-          console.error("React failed to mount to #root");
+      var check = setInterval(function() {
+        var root = document.getElementById('root');
+        if (root && root.children.length > 0) {
+          document.getElementById('loading-screen').style.display = 'none';
+          clearInterval(check);
         }
-      }, 2000);
+      }, 100);
+      setTimeout(function() { clearInterval(check); }, 5000);
     });
   </script>
 </body>
