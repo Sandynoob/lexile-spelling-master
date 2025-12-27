@@ -5,7 +5,7 @@
   "description": "Lexile based spelling assessment app",
   "main": "index.js",
   "scripts": {
-    "build": "mkdir -p www && npx esbuild index.tsx --bundle --minify --sourcemap --outfile=www/index.js --format=iife --platform=browser --target=chrome60 --loader:.tsx=tsx --loader:.ts=ts && cp index.html manifest.json www/",
+    "build": "mkdir -p www && npx esbuild index.tsx --bundle --minify --sourcemap --outfile=www/index.js --format=iife --platform=browser --target=chrome60 --loader:.tsx=tsx --loader:.ts=ts --define:process.env.NODE_ENV=\\\"production\\\" && cp index.html manifest.json www/",
     "sync": "npx cap sync",
     "add-android": "npx cap add android"
   },
