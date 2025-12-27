@@ -1,3 +1,4 @@
+
 name: Build Android APK
 
 on:
@@ -22,6 +23,9 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Build Web Project
+        run: npm run build
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -33,7 +37,10 @@ jobs:
 
       - name: Create Android Project
         run: |
-          npx cap add android
+          # Use npx cap add only if the folder doesn't exist, otherwise sync
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
           npx cap sync android
 
       - name: Build APK
