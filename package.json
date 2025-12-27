@@ -1,0 +1,22 @@
+
+{
+  "name": "lexile-spelling-master",
+  "version": "1.0.0",
+  "description": "Lexile based spelling assessment app",
+  "main": "index.tsx",
+  "scripts": {
+    "build": "echo 'Building web assets...'",
+    "sync": "npx cap sync",
+    "add-android": "npx cap add android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

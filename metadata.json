@@ -1,0 +1,7 @@
+{
+  "name": "Lexile Spelling Master",
+  "description": "A high-quality Lexile-based spelling application with American pronunciation, randomized word challenges, and real-time scoring.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
