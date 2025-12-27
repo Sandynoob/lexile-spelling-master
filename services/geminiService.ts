@@ -20,37 +20,47 @@ const getAudioContext = () => {
 
 /**
  * Uses browser-native SpeechSynthesis for offline American pronunciation.
+ * Added safety checks for environments where speechSynthesis might be undefined.
  */
 export const playAmericanPronunciation = (word: string) => {
-  // Cancel any ongoing speech
-  window.speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(word);
-  
-  // Attempt to find a high-quality American English voice
-  const voices = window.speechSynthesis.getVoices();
-  const usVoice = voices.find(v => v.lang.includes('en-US') && v.name.includes('Google')) || 
-                voices.find(v => v.lang.includes('en-US')) ||
-                voices[0];
-
-  if (usVoice) {
-    utterance.voice = usVoice;
+  // Safety check: ensure speechSynthesis exists in the global scope
+  if (typeof window === 'undefined' || !window.speechSynthesis) {
+    console.warn("Speech Synthesis API is not supported in this environment.");
+    return;
   }
 
-  utterance.lang = 'en-US';
-  utterance.rate = 0.8; // Slightly slower as per original requirement
-  utterance.pitch = 1.0;
-  utterance.volume = 1.0;
+  try {
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
 
-  window.speechSynthesis.speak(utterance);
+    const utterance = new SpeechSynthesisUtterance(word);
+    
+    // Attempt to find a high-quality American English voice
+    const voices = window.speechSynthesis.getVoices();
+    const usVoice = voices.find(v => v.lang.includes('en-US') && v.name.includes('Google')) || 
+                  voices.find(v => v.lang.includes('en-US')) ||
+                  voices[0];
+
+    if (usVoice) {
+      utterance.voice = usVoice;
+    }
+
+    utterance.lang = 'en-US';
+    utterance.rate = 0.8; // Slightly slower as per original requirement
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    window.speechSynthesis.speak(utterance);
+  } catch (error) {
+    console.error("Error during speech synthesis:", error);
+  }
 };
 
 /**
  * Static feedback logic based on user's score to ensure offline availability.
  */
 export const getAIFeedback = async (score: number): Promise<string> => {
-  // Simulate a tiny delay to maintain the "generating" feel if desired, 
-  // but return static results immediately for pure offline usage.
+  // Simulate a tiny delay to maintain the "generating" feel if desired
   if (score >= 90) {
     return "Absolutely incredible! Your spelling mastery is truly at the professional Lexile level.";
   } else if (score >= 80) {
