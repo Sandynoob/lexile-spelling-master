@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +41,7 @@
     }
   </style>
 
-  <!-- 样式增强 -->
+  <!-- Tailwind 仅用于原子化样式类 -->
   <script src="https://cdn.tailwindcss.com"></script>
 <script type="importmap">
 {
@@ -53,7 +54,7 @@
 </script>
 </head>
 <body>
-  <!-- 错误监控面板 -->
+  <!-- 全局错误捕获面板 -->
   <div id="error-display"></div>
 
   <div id="loading-screen">
@@ -67,12 +68,12 @@
     window.onerror = function(msg, url, line, col, error) {
       var dev = document.getElementById('error-display');
       dev.style.display = 'block';
-      dev.innerHTML += '<div>[CRITICAL] ' + msg + ' <br><small>Line: ' + line + '</small></div><hr style="opacity:0.2;margin:5px 0">';
+      dev.innerHTML += '<div>[CRITICAL ERROR] ' + msg + ' <br><small>Line: ' + line + ', Col: ' + col + '</small></div><hr style="opacity:0.2;margin:5px 0">';
       return false;
     };
   </script>
 
-  <!-- 加载打包后的 index.js -->
+  <!-- 引用 esbuild 生成的单一 bundle 文件 -->
   <script src="index.js"></script>
 
   <script>
@@ -87,6 +88,7 @@
           clearInterval(check);
         }
       }, 100);
+      // 如果 5 秒后还没加载完，停止检查
       setTimeout(function() { clearInterval(check); }, 5000);
     });
   </script>
