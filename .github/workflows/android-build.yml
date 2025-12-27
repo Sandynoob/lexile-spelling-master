@@ -19,11 +19,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install Dependencies
         run: npm install
 
-      - name: Build Web Project
+      - name: Build Web Project (Bundle TSX to JS)
         run: npm run build
 
       - name: Set up JDK 17
@@ -37,10 +38,10 @@ jobs:
 
       - name: Create Android Project
         run: |
-          # Use npx cap add only if the folder doesn't exist, otherwise sync
           if [ ! -d "android" ]; then
             npx cap add android
           fi
+          # Sync will copy the www folder content to the android project
           npx cap sync android
 
       - name: Build APK
