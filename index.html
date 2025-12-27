@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,14 +33,13 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     #error-display {
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(220, 38, 38, 0.95); color: white;
-      padding: 15px; font-size: 12px; font-family: monospace;
+      background: rgba(31, 41, 55, 0.95); color: #ef4444;
+      padding: 15px; font-size: 11px; font-family: monospace;
       z-index: 10001; display: none; max-height: 40vh; overflow: auto;
-      box-shadow: 0 -4px 12px rgba(0,0,0,0.2);
+      border-top: 2px solid #ef4444;
     }
   </style>
 
-  <!-- Tailwind 仅用于原子化样式类 -->
   <script src="https://cdn.tailwindcss.com"></script>
 <script type="importmap">
 {
@@ -54,42 +52,42 @@
 </script>
 </head>
 <body>
-  <!-- 全局错误捕获面板 -->
   <div id="error-display"></div>
 
   <div id="loading-screen">
     <div class="spinner"></div>
-    <p style="margin-top: 20px; color: #64748b; font-weight: bold;">Loading Lexile Master...</p>
+    <p style="margin-top: 20px; color: #64748b; font-weight: bold;">Initializing Lexile Engine...</p>
   </div>
 
   <div id="root"></div>
 
   <script>
+    // 捕获所有未处理的错误
     window.onerror = function(msg, url, line, col, error) {
       var dev = document.getElementById('error-display');
       dev.style.display = 'block';
-      dev.innerHTML += '<div>[CRITICAL ERROR] ' + msg + ' <br><small>Line: ' + line + ', Col: ' + col + '</small></div><hr style="opacity:0.2;margin:5px 0">';
+      var log = document.createElement('div');
+      log.innerHTML = '[ERROR] ' + msg + ' (Line: ' + line + ')';
+      dev.appendChild(log);
       return false;
     };
   </script>
 
-  <!-- 引用 esbuild 生成的单一 bundle 文件 -->
+  <!-- 引用 esbuild 打包后的 JS -->
   <script src="index.js"></script>
 
   <script>
     window.addEventListener('load', function() {
+      var checkCount = 0;
       var check = setInterval(function() {
         var root = document.getElementById('root');
         if (root && root.children.length > 0) {
           document.getElementById('loading-screen').style.opacity = '0';
-          setTimeout(function() {
-            document.getElementById('loading-screen').style.display = 'none';
-          }, 300);
+          setTimeout(function() { document.getElementById('loading-screen').style.display = 'none'; }, 300);
           clearInterval(check);
         }
+        if (checkCount++ > 100) clearInterval(check);
       }, 100);
-      // 如果 5 秒后还没加载完，停止检查
-      setTimeout(function() { clearInterval(check); }, 5000);
     });
   </script>
 </body>
