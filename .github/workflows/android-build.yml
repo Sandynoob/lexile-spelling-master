@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # Removed cache: 'npm' because package-lock.json is not present
 
       - name: Install Dependencies
         run: npm install
@@ -41,7 +41,6 @@ jobs:
           if [ ! -d "android" ]; then
             npx cap add android
           fi
-          # Sync will copy the www folder content to the android project
           npx cap sync android
 
       - name: Build APK
