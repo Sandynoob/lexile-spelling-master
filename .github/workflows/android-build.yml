@@ -1,11 +1,9 @@
+
 name: Build Android APK
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  # 添加手动触发按钮
+  # 移除了 push 和 pull_request 自动触发
+  # 仅保留手动触发按钮
   workflow_dispatch:
 
 jobs:
