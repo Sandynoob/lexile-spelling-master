@@ -52,10 +52,8 @@
 </script>
 </head>
 <body>
-  <!-- 错误捕获层 -->
   <div id="error-display"></div>
 
-  <!-- 初始化加载层 -->
   <div id="loading-screen">
     <div class="spinner"></div>
     <p style="margin-top: 20px; color: #64748b; font-weight: bold;">Initializing Lexile Engine...</p>
@@ -64,23 +62,24 @@
   <div id="root"></div>
 
   <script>
-    // 全局错误捕获，用于调试
+    // 捕获所有未处理错误并显示在屏幕上，方便调试
     window.onerror = function(msg, url, line, col, error) {
       var dev = document.getElementById('error-display');
       dev.style.display = 'block';
       var log = document.createElement('div');
-      log.style.marginBottom = '5px';
-      log.innerHTML = '<strong>[ERR]</strong> ' + msg + '<br><small>Line: ' + line + '</small>';
+      log.style.borderBottom = '1px solid #333';
+      log.style.padding = '5px 0';
+      log.innerHTML = '<strong>[ERR]</strong> ' + msg + '<br><small>Line: ' + line + ' | Col: ' + col + '</small>';
       dev.appendChild(log);
       return false;
     };
   </script>
 
-  <!-- 只引用打包后的单一文件 -->
+  <!-- 只加载这一个文件，esbuild 已经把所有东西都打包进去了 -->
   <script src="index.js"></script>
 
   <script>
-    // 隐藏加载层
+    // 自动移除加载动画
     window.addEventListener('load', function() {
       var check = setInterval(function() {
         var root = document.getElementById('root');
