@@ -5,7 +5,7 @@
   "description": "Lexile based spelling assessment app",
   "main": "index.tsx",
   "scripts": {
-    "build": "echo 'Building web assets...'",
+    "build": "mkdir -p www && cp index.html manifest.json www/ && cp *.tsx *.ts www/ && cp -r components services www/",
     "sync": "npx cap sync",
     "add-android": "npx cap add android"
   },
