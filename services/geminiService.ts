@@ -6,32 +6,41 @@
 
 /**
  * Uses browser-native SpeechSynthesis for offline American pronunciation.
- * Extremely robust check for Android WebView compatibility.
+ * Improved safety checks for Android WebView compatibility.
  */
 export const playAmericanPronunciation = (word: string) => {
-  // 1. 深度环境检查：确保 window, speechSynthesis 及其核心方法全部存在
-  if (
-    typeof window === 'undefined' || 
-    !window.speechSynthesis || 
-    typeof window.speechSynthesis.cancel !== 'function' ||
-    typeof window.speechSynthesis.speak !== 'function'
-  ) {
-    console.warn("Speech Synthesis API is unavailable in this environment.");
-    return;
-  }
-
   try {
-    // 2. 再次确保 cancel 是安全的
-    window.speechSynthesis.cancel();
+    // 1. 检查全局环境
+    if (typeof window === 'undefined') return;
+
+    // 2. 获取合成引擎实例
+    const synth = window.speechSynthesis;
+    
+    // 3. 核心防御：如果 synth 不存在或 cancel 不是函数，直接退出
+    if (!synth || typeof synth.cancel !== 'function') {
+      console.warn("SpeechSynthesis.cancel is not available.");
+      return;
+    }
+
+    // 4. 安全执行取消
+    synth.cancel();
+
+    // 5. 检查构造函数是否存在
+    if (typeof window.SpeechSynthesisUtterance === 'undefined') {
+      console.warn("SpeechSynthesisUtterance is not defined.");
+      return;
+    }
 
     const utterance = new SpeechSynthesisUtterance(word);
     
-    // 3. 兼容性更好的声音获取逻辑
+    // 6. 安全获取声音列表
     let voices: SpeechSynthesisVoice[] = [];
-    try {
-      voices = window.speechSynthesis.getVoices();
-    } catch (e) {
-      console.warn("Failed to get voices, using default.");
+    if (typeof synth.getVoices === 'function') {
+      try {
+        voices = synth.getVoices();
+      } catch (e) {
+        console.warn("Could not get voices.");
+      }
     }
 
     const usVoice = voices.find(v => v.lang.includes('en-US') && v.name.includes('Google')) || 
@@ -47,10 +56,13 @@ export const playAmericanPronunciation = (word: string) => {
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
 
-    window.speechSynthesis.speak(utterance);
+    // 7. 安全执行朗读
+    if (typeof synth.speak === 'function') {
+      synth.speak(utterance);
+    }
   } catch (error) {
-    // 4. 捕获所有运行时异常，防止 UI 线程崩溃
-    console.error("SpeechSynthesis runtime error handled:", error);
+    // 捕获所有可能的异常，确保不阻塞主 UI 线程
+    console.error("SpeechSynthesis error caught:", error);
   }
 };
 
