@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +41,7 @@
     }
   </style>
 
-  <!-- 仅用于装饰，不加载也不影响核心拼写功能 -->
+  <!-- 仅用于装饰样式 -->
   <script src="https://cdn.tailwindcss.com"></script>
 <script type="importmap">
 {
@@ -53,12 +54,12 @@
 </script>
 </head>
 <body>
-  <!-- 错误监控：如果屏幕还是白的，底部会出现红色文字报错 -->
+  <!-- 错误监控：如果发生崩溃，底部会出现红色文字报错 -->
   <div id="error-display"></div>
 
   <div id="loading-screen">
     <div class="spinner"></div>
-    <p style="margin-top: 20px; color: #64748b; font-weight: bold;">Starting App...</p>
+    <p style="margin-top: 20px; color: #64748b; font-weight: bold;">Loading Lexile Master...</p>
   </div>
 
   <div id="root"></div>
@@ -67,12 +68,12 @@
     window.onerror = function(msg, url, line, col, error) {
       var dev = document.getElementById('error-display');
       dev.style.display = 'block';
-      dev.innerHTML += '<div>[ERROR] ' + msg + ' (' + line + ':' + col + ')</div>';
+      dev.innerHTML += '<div>[CRITICAL] ' + msg + ' <br><small>Line: ' + line + '</small></div><hr style="opacity:0.2;margin:5px 0">';
       return false;
     };
   </script>
 
-  <!-- 重要：这里引用本地打包后的 index.js -->
+  <!-- 引用本地打包后的 index.js -->
   <script src="index.js"></script>
 
   <script>
@@ -80,7 +81,10 @@
       var check = setInterval(function() {
         var root = document.getElementById('root');
         if (root && root.children.length > 0) {
-          document.getElementById('loading-screen').style.display = 'none';
+          document.getElementById('loading-screen').style.opacity = '0';
+          setTimeout(function() {
+            document.getElementById('loading-screen').style.display = 'none';
+          }, 300);
           clearInterval(check);
         }
       }, 100);
