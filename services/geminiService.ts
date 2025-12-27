@@ -1,52 +1,69 @@
 
 /**
- * Localized Service for Offline & Online Fallback
+ * Optimized Service for Chinese Android Devices (MIUI/HyperOS)
  */
 
 /**
- * 针对红米等国产手机的优化语音方案
- * 逻辑：优先尝试浏览器 TTS，如果失败或环境受限，自动使用有道在线美音 API
+ * 语音播放逻辑：
+ * 优先使用在线美音 API（有道），因为它在国产手机 WebView 中最稳定。
+ * 系统原生 TTS 仅作为最后的静默备份。
  */
 export const playAmericanPronunciation = (word: string) => {
   if (typeof window === 'undefined') return;
-
   const wordClean = word.trim().toLowerCase();
-  
-  // 方案 A: 尝试原生 SpeechSynthesis (离线)
-  const synth = (window as any).speechSynthesis;
-  if (synth && typeof synth.speak === 'function') {
-    try {
-      synth.cancel();
-      const UtteranceClass = (window as any).SpeechSynthesisUtterance;
-      if (UtteranceClass) {
-        const utterance = new UtteranceClass(wordClean);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.8;
-        
-        // 探测是否有可用声音，如果没有则不强行调用 speak
-        const voices = synth.getVoices();
-        if (voices.length > 0) {
-          synth.speak(utterance);
-          // 如果 100ms 后还在朗读，说明原生引擎工作正常，直接返回
-          if (synth.speaking) return;
-        }
-      }
-    } catch (e) {
-      console.warn("Native TTS failed, trying online fallback.");
-    }
-  }
 
-  // 方案 B: 在线语音兜底 (针对国产手机优化的有道美音接口)
-  // type=2 表示美音，type=1 表示英音
+  // --- 策略 A: 在线音频 (最可靠) ---
   try {
-    const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(wordClean)}&type=2`);
-    audio.play().catch(err => {
-      console.error("Online audio play failed:", err);
-    });
-  } catch (error) {
-    console.error("Final fallback audio failed:", error);
+    // type=2 为美音，type=1 为英音
+    const audioUrl = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(wordClean)}&type=2`;
+    const audio = new Audio(audioUrl);
+    
+    // 设置超时防止卡死
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn("Online audio play blocked or failed:", err);
+        // 如果在线播放失败，尝试策略 B
+        tryNativeTTS(wordClean);
+      });
+    }
+  } catch (err) {
+    console.error("Online audio initiation error:", err);
+    tryNativeTTS(wordClean);
   }
 };
+
+/**
+ * 极度防御性的原生 TTS 调用
+ */
+function tryNativeTTS(word: string) {
+  try {
+    const synth = (window as any).speechSynthesis;
+    
+    // 每一层访问都进行严格检查
+    if (!synth) return;
+    
+    // 防止 cancel 属性为 undefined
+    if (typeof synth.cancel === 'function') {
+      synth.cancel();
+    }
+
+    const UtteranceClass = (window as any).SpeechSynthesisUtterance;
+    if (!UtteranceClass) return;
+
+    const utterance = new UtteranceClass(word);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.8;
+    
+    // 只有在 speak 是函数时才调用
+    if (typeof synth.speak === 'function') {
+      synth.speak(utterance);
+    }
+  } catch (e) {
+    // 静默失败，不弹出崩溃提示
+    console.warn("All TTS attempts failed for word:", word);
+  }
+}
 
 export const getAIFeedback = async (score: number): Promise<string> => {
   if (score >= 90) return "Absolutely incredible! Your spelling mastery is professional.";
